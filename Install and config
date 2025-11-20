@@ -5,3 +5,56 @@ sudo apt install -y python3 python3-pip
 pip3 install requests folium
 # You will need to go to ipinfo.io and create a user.  Once a user is created, you can go to your dashboard and copy your token which will allow you to connect through an api.  
 # Set your ipinfo token.  This adds your token to ~/.bashrc so that it is stored permanently so that you are not manually adding your token to the script every time that you want to access it.
+# Open the script file:
+nano ipinfo_map.py
+# Paste this script into the newly created ipinfo_map.py file:
+#!/usr/bin/env python3
+import subprocess, requests, folium, os
+
+token = os.getenv("IPINFO_TOKEN")
+if not token:
+    print("Missing IPINFO_TOKEN environment variable.")
+    exit(1)
+
+target = input("Enter an IP or domain to trace: ")
+
+# Run Windows tracert from inside WSL (works in Ubuntu on WSL)
+result = subprocess.run(["cmd.exe", "/c", "tracert", "-d", target],
+                        capture_output=True, text=True)
+
+ips = []
+for line in result.stdout.splitlines():
+    parts = line.split()
+    for p in parts:
+        if p.count('.') == 3:
+            ips.append(p)
+
+print("Hops found:", ips)
+
+m = folium.Map(location=[20, 0], zoom_start=2)
+
+for ip in ips:
+    url = f"https://ipinfo.io/{ip}/json?token={token}"
+    r = requests.get(url).json()
+
+    if "loc" in r:
+        lat, lon = map(float, r["loc"].split(","))
+        folium.Marker(
+            [lat, lon],
+            popup=f"{ip}<br>{r.get('city','')} {r.get('region','')}<br>{r.get('org','')}"
+        ).add_to(m)
+
+m.save("ipinfo_map.html")
+print("Map saved as ipinfo_map.html")
+# Make it executable:
+chmod +x ipinfo_map.py
+# Run the Script
+./ipinfo_map.py
+# Enter a target IP (In this case, GOOGLE DNS)
+8.8.8.8
+# The script will run Windows tracert, extract hop IPs, query ipinfo for geolocation, build an interactive map
+# The output file will be named ipinfo_map.html
+# From Ubuntu WSL, open it in Windows:
+explorer.exe ipinfo_map.html
+# Or from Ubuntu desktop:
+firefox ipinfo_map.html
