@@ -1,0 +1,7 @@
+# Update the system and install Python, pip, and necessary libraries.
+sudo apt update
+sudo apt install -y python3 python3-pip
+# Install required Python packages:
+pip3 install requests folium
+# You will need to go to ipinfo.io and create a user.  Once a user is created, you can go to your dashboard and copy your token which will allow you to connect through an api.  
+# Set your ipinfo token.  This adds your token to ~/.bashrc so that it is stored permanently so that you are not manually adding your token to the script every time that you want to access it.
